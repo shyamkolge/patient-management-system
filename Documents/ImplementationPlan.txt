@@ -1,0 +1,447 @@
+Patient Records Management System - Implementation Plan
+A full-stack hospital management system with role-based dashboards for Admins, Doctors, and Patients, featuring secure authentication, appointment scheduling, medical records management, and comprehensive CRUD operations.
+
+User Review Required
+IMPORTANT
+
+Technology Stack Confirmation
+
+Frontend: React.js with Vite + Tailwind CSS
+Backend: Node.js + Express.js
+Database: MongoDB (flexible schema for medical records)
+Authentication: JWT with role-based access control
+Please confirm if you'd like to proceed with MongoDB or prefer PostgreSQL/MySQL instead.
+
+IMPORTANT
+
+File Storage Decision For medical reports, prescriptions, and patient documents:
+
+Option 1: Cloudinary (easier setup, free tier available)
+Option 2: AWS S3 (enterprise-grade, requires AWS account)
+Option 3: Local file storage (simpler, no external dependencies)
+Which option would you prefer?
+
+WARNING
+
+Deployment Environment Please specify your deployment target:
+
+Local development only
+Cloud deployment (Vercel/Netlify for frontend, Railway/Render for backend)
+Self-hosted server
+Docker containers
+Proposed Changes
+Project Structure
+patient-records-system/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── utils/
+│   │   └── server.js
+│   ├── .env.example
+│   └── package.json
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   ├── pages/
+    │   ├── context/
+    │   ├── services/
+    │   ├── utils/
+    │   └── App.jsx
+    ├── public/
+    └── package.json
+Backend - Core Setup
+[NEW] 
+package.json
+Express.js server setup
+Dependencies: express, mongoose, jsonwebtoken, bcryptjs, helmet, express-rate-limit, cors, dotenv, zod
+[NEW] 
+.env.example
+Environment variables template
+MongoDB connection string, JWT secrets, port configuration
+[NEW] 
+src/server.js
+Express app initialization
+Middleware setup (helmet, cors, rate limiting)
+Route mounting
+Error handling
+[NEW] 
+src/config/database.js
+MongoDB connection configuration
+Connection error handling
+Backend - Authentication & Security
+[NEW] 
+src/middleware/auth.js
+JWT verification middleware
+Token extraction and validation
+User authentication check
+[NEW] 
+src/middleware/rbac.js
+Role-based access control
+Permission checking for Admin, Doctor, Patient roles
+Route protection based on user roles
+[NEW] 
+src/middleware/validation.js
+Input validation using Zod
+Request body sanitization
+Validation error handling
+[NEW] 
+src/utils/jwt.js
+JWT token generation (access + refresh tokens)
+Token verification utilities
+Token refresh logic
+Backend - Database Models
+[NEW] 
+src/models/User.js
+User schema with roles (admin, doctor, patient)
+Password hashing with bcrypt
+Email, username, role, status fields
+Pre-save hook for password hashing
+[NEW] 
+src/models/Patient.js
+Patient profile information
+Personal details, contact info, emergency contacts
+Medical history summary
+Link to User model
+[NEW] 
+src/models/Doctor.js
+Doctor profile information
+Specialization, qualifications, experience
+Available time slots
+Link to User model
+[NEW] 
+src/models/Appointment.js
+Appointment scheduling
+Patient and Doctor references
+Date, time, status (scheduled, completed, cancelled)
+Notes and reason for visit
+[NEW] 
+src/models/MedicalRecord.js
+Patient medical records
+Diagnosis, symptoms, treatment
+Doctor reference, date of visit
+Attachments (reports, scans)
+[NEW] 
+src/models/Prescription.js
+Prescription details
+Medications, dosage, duration
+Patient and Doctor references
+Issue date and instructions
+Backend - API Routes & Controllers
+[NEW] 
+src/routes/auth.routes.js
+POST /api/auth/register - User registration
+POST /api/auth/login - User login
+POST /api/auth/refresh - Refresh access token
+POST /api/auth/logout - User logout
+[NEW] 
+src/controllers/auth.controller.js
+Registration logic with role assignment
+Login with JWT generation
+Token refresh implementation
+Password validation
+[NEW] 
+src/routes/user.routes.js
+GET /api/users - List all users (Admin only)
+GET /api/users/:id - Get user details
+PUT /api/users/:id - Update user
+DELETE /api/users/:id - Delete user (Admin only)
+PATCH /api/users/:id/role - Change user role (Admin only)
+[NEW] 
+src/controllers/user.controller.js
+User CRUD operations
+Role management
+User search and filtering
+[NEW] 
+src/routes/patient.routes.js
+GET /api/patients - List patients (Admin, Doctor)
+POST /api/patients - Create patient (Admin)
+GET /api/patients/:id - Get patient details
+PUT /api/patients/:id - Update patient
+DELETE /api/patients/:id - Delete patient (Admin)
+[NEW] 
+src/controllers/patient.controller.js
+Patient CRUD operations
+Patient search functionality
+Medical history retrieval
+[NEW] 
+src/routes/doctor.routes.js
+GET /api/doctors - List all doctors
+POST /api/doctors - Create doctor profile (Admin)
+GET /api/doctors/:id - Get doctor details
+PUT /api/doctors/:id - Update doctor profile
+GET /api/doctors/:id/appointments - Get doctor's appointments
+[NEW] 
+src/controllers/doctor.controller.js
+Doctor profile management
+Availability management
+Doctor search by specialization
+[NEW] 
+src/routes/appointment.routes.js
+GET /api/appointments - List appointments
+POST /api/appointments - Schedule appointment
+GET /api/appointments/:id - Get appointment details
+PUT /api/appointments/:id - Update appointment
+PATCH /api/appointments/:id/status - Update status
+DELETE /api/appointments/:id - Cancel appointment
+[NEW] 
+src/controllers/appointment.controller.js
+Appointment scheduling logic
+Conflict checking
+Status management (scheduled, completed, cancelled)
+Appointment history
+[NEW] 
+src/routes/medical-record.routes.js
+GET /api/medical-records - List records (filtered by role)
+POST /api/medical-records - Create record (Doctor)
+GET /api/medical-records/:id - Get record details
+PUT /api/medical-records/:id - Update record (Doctor)
+GET /api/medical-records/patient/:patientId - Get patient records
+[NEW] 
+src/controllers/medical-record.controller.js
+Medical record creation and management
+File upload handling for reports
+Record access control by role
+[NEW] 
+src/routes/prescription.routes.js
+GET /api/prescriptions - List prescriptions
+POST /api/prescriptions - Create prescription (Doctor)
+GET /api/prescriptions/:id - Get prescription details
+GET /api/prescriptions/patient/:patientId - Get patient prescriptions
+[NEW] 
+src/controllers/prescription.controller.js
+Prescription creation (Doctor only)
+Prescription retrieval by patient
+Prescription history
+Frontend - Core Setup
+[NEW] 
+package.json
+React + Vite configuration
+Dependencies: react, react-router-dom, axios, tailwindcss, lucide-react (icons)
+[NEW] 
+vite.config.js
+Vite configuration
+Proxy setup for API calls
+[NEW] 
+tailwind.config.js
+Tailwind CSS configuration
+Custom color palette for medical theme
+Custom utilities
+[NEW] 
+src/index.css
+Global styles
+Tailwind directives
+Custom CSS variables for theming
+Glassmorphism and modern design utilities
+Frontend - Authentication & State Management
+[NEW] 
+src/context/AuthContext.jsx
+Authentication state management
+Login, logout, register functions
+Token storage and refresh
+User role management
+Protected route logic
+[NEW] 
+src/services/api.js
+Axios instance configuration
+Request/response interceptors
+Token attachment to requests
+Error handling
+[NEW] 
+src/services/auth.service.js
+Authentication API calls
+Login, register, logout, refresh token
+Frontend - Shared Components
+[NEW] 
+src/components/Layout/Sidebar.jsx
+Responsive sidebar navigation
+Role-based menu items
+Active route highlighting
+[NEW] 
+src/components/Layout/Header.jsx
+Top navigation bar
+User profile dropdown
+Logout functionality
+[NEW] 
+src/components/Layout/DashboardLayout.jsx
+Main dashboard layout wrapper
+Sidebar + Header + Content area
+Responsive design
+[NEW] 
+src/components/Common/Card.jsx
+Reusable card component
+Glassmorphism styling
+Hover effects
+[NEW] 
+src/components/Common/Button.jsx
+Custom button component
+Multiple variants (primary, secondary, danger)
+Loading states
+[NEW] 
+src/components/Common/Table.jsx
+Reusable data table
+Sorting, pagination
+Action buttons
+[NEW] 
+src/components/Common/Modal.jsx
+Modal dialog component
+Form modals, confirmation dialogs
+[NEW] 
+src/components/Common/ProtectedRoute.jsx
+Route protection by authentication
+Role-based route access
+Frontend - Authentication Pages
+[NEW] 
+src/pages/Login.jsx
+Login form with validation
+Role-based redirect after login
+Modern, premium design with gradients
+Error handling
+[NEW] 
+src/pages/Register.jsx
+Registration form
+Role selection (for admin to create users)
+Form validation
+Frontend - Admin Dashboard
+[NEW] 
+src/pages/Admin/Dashboard.jsx
+Admin overview dashboard
+Statistics cards (total users, patients, doctors, appointments)
+Recent activity
+Charts and analytics
+[NEW] 
+src/pages/Admin/UserManagement.jsx
+User list with search and filters
+Create, edit, delete users
+Role assignment
+User status management
+[NEW] 
+src/pages/Admin/DoctorManagement.jsx
+Doctor list and management
+Add/edit doctor profiles
+View doctor schedules
+[NEW] 
+src/pages/Admin/PatientManagement.jsx
+Patient list and management
+Add/edit patient records
+View patient history
+[NEW] 
+src/pages/Admin/Reports.jsx
+System reports and analytics
+Appointment statistics
+User activity reports
+Frontend - Doctor Dashboard
+[NEW] 
+src/pages/Doctor/Dashboard.jsx
+Doctor overview
+Today's appointments
+Recent patients
+Quick actions
+[NEW] 
+src/pages/Doctor/Appointments.jsx
+Appointment list (upcoming, past)
+Appointment details
+Update appointment status
+Calendar view
+[NEW] 
+src/pages/Doctor/PatientHistory.jsx
+Search and view patient history
+Medical records timeline
+Previous prescriptions
+[NEW] 
+src/pages/Doctor/Prescriptions.jsx
+Create new prescriptions
+View prescription history
+Prescription templates
+[NEW] 
+src/pages/Doctor/MedicalRecords.jsx
+Create medical records
+Upload reports/documents
+View patient records
+Frontend - Patient Dashboard
+[NEW] 
+src/pages/Patient/Dashboard.jsx
+Patient overview
+Upcoming appointments
+Recent prescriptions
+Health summary
+[NEW] 
+src/pages/Patient/MedicalRecords.jsx
+View own medical records
+Download reports
+Medical history timeline
+[NEW] 
+src/pages/Patient/Appointments.jsx
+View appointment history
+Appointment details
+Upcoming appointments
+[NEW] 
+src/pages/Patient/Prescriptions.jsx
+View prescriptions
+Download prescription PDFs
+Prescription history
+Frontend - Routing
+[NEW] 
+src/App.jsx
+Main app component
+React Router setup
+Protected routes configuration
+Role-based routing
+Layout integration
+Verification Plan
+Automated Tests
+# Backend tests
+cd backend
+npm test
+# Test authentication endpoints
+curl -X POST http://localhost:5000/api/auth/login
+# Test protected routes
+curl -H "Authorization: Bearer <token>" http://localhost:5000/api/users
+Manual Verification
+Authentication Flow
+
+Register new users with different roles
+Login as Admin, Doctor, Patient
+Verify JWT tokens are generated
+Test token refresh mechanism
+Verify logout functionality
+Role-Based Access Control
+
+Login as Admin → verify access to all dashboards
+Login as Doctor → verify limited access (no user management)
+Login as Patient → verify access only to own records
+Test unauthorized access attempts
+CRUD Operations
+
+Admin: Create, edit, delete users
+Admin: Manage patients and doctors
+Doctor: Create medical records and prescriptions
+Patient: View own records (read-only)
+Appointment Scheduling
+
+Create appointments
+Update appointment status
+Check for scheduling conflicts
+View appointments by role
+UI/UX Testing
+
+Verify responsive design on mobile, tablet, desktop
+Test dark mode (if implemented)
+Verify smooth animations and transitions
+Check form validations
+Test error handling and user feedback
+Security Testing
+
+Verify password hashing
+Test rate limiting on login attempts
+Check CORS configuration
+Verify input validation
+Test XSS and injection prevention
+Browser Testing
+
+Use browser automation to test complete user flows
+Test login → dashboard → CRUD operations → logout
+Verify all interactive elements have unique IDs

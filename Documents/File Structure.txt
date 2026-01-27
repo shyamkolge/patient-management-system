@@ -1,0 +1,110 @@
+
+## Frontend File Structure 
+
+frontend/
+│
+├── public/
+│   └── index.html
+│
+├── src/
+│   ├── assets/               # Images, icons, logos
+│   │
+│   ├── components/           # Reusable UI components
+│   │   ├── common/           # Buttons, Inputs, Modal
+│   │   ├── layout/           # Header, Sidebar, Footer
+│   │   └── loaders/          # Spinners, skeletons
+│   │
+│   ├── pages/                # Route-level pages
+│   │   ├── auth/             # Login, Register, Forgot
+│   │   ├── admin/            # Admin dashboard pages
+│   │   ├── doctor/           # Doctor dashboard pages
+│   │   └── patient/          # Patient dashboard pages
+│   │
+│   ├── routes/               # Route definitions
+│   │   ├── AppRoutes.jsx
+│   │   └── ProtectedRoute.jsx
+│   │
+│   ├── context/              # Global state
+│   │   ├── AuthContext.jsx
+│   │   └── AppContext.jsx
+│   │
+│   ├── services/             # API calls
+│   │   ├── api.js             # Axios instance
+│   │   ├── auth.service.js
+│   │   ├── patient.service.js
+│   │   └── appointment.service.js
+│   │
+│   ├── utils/                # Helper functions
+│   │   ├── constants.js
+│   │   └── formatDate.js
+│   │
+│   ├── hooks/                # Custom hooks
+│   │   └── useAuth.js
+│   │
+│   ├── styles/               # Global styles
+│   │   └── index.css
+│   │
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── .env
+├── package.json
+└── vite.config.js
+
+
+
+
+## Backend File structure 
+
+backend/
+│
+├── src/
+│   ├── config/               # Config files
+│   │   ├── db.js             # MongoDB connection
+│   │   └── env.js
+│   │
+│   ├── models/               # Mongoose schemas
+│   │   ├── User.model.js
+│   │   ├── Patient.model.js
+│   │   ├── Doctor.model.js
+│   │   ├── Appointment.model.js
+│   │   ├── MedicalRecord.model.js
+│   │   └── Bill.model.js
+│   │
+│   ├── routes/               # API routes
+│   │   ├── auth.routes.js
+│   │   ├── admin.routes.js
+│   │   ├── patient.routes.js
+│   │   ├── doctor.routes.js
+│   │   └── appointment.routes.js
+│   │
+│   ├── controllers/          # Request logic
+│   │   ├── auth.controller.js
+│   │   ├── patient.controller.js
+│   │   ├── doctor.controller.js
+│   │   └── appointment.controller.js
+│   │
+│   ├── middlewares/          # Security & checks
+│   │   ├── auth.middleware.js
+│   │   ├── role.middleware.js
+│   │   └── error.middleware.js
+│   │
+│   ├── services/             # Business logic
+│   │   ├── auth.service.js
+│   │   └── appointment.service.js
+│   │
+│   ├── utils/                # Helpers
+│   │   ├── jwt.js
+│   │   ├── logger.js
+│   │   └── sendEmail.js
+│   │
+│   ├── validations/          # Input validation
+│   │   ├── auth.validation.js
+│   │   └── patient.validation.js
+│   │
+│   ├── app.js                # Express app setup
+│   └── server.js             # App entry point
+│
+├── .env
+├── package.json
+└── nodemon.json
