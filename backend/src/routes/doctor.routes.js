@@ -6,13 +6,13 @@ import {
     updateDoctor,
     getDoctorAppointments,
 } from '../controllers/doctor.controller.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { isAdmin } from '../middleware/rbac.js';
 
 const router = express.Router();
 
-// Public route to view doctors
-router.get('/', getAllDoctors);
+// Public route to view doctors, but check token if present
+router.get('/', optionalAuthenticate, getAllDoctors);
 router.get('/:id', getDoctorById);
 
 // Protected routes

@@ -1,37 +1,47 @@
-import { useEffect, useState } from 'react';
-import DashboardLayout from '../../components/layouts/DashboardLayout.jsx';
-import { PageHeader } from '../../components/common/PageHeader.jsx';
-import { Table } from '../../components/common/Table.jsx';
-import { Spinner } from '../../components/common/Spinner.jsx';
-import { EmptyState } from '../../components/common/EmptyState.jsx';
-import { api } from '../../services/api.js';
-import { formatName } from '../../utils/format.js';
+import { useEffect, useState } from "react";
+import DashboardLayout from "../../components/layouts/DashboardLayout.jsx";
+import { PageHeader } from "../../components/common/PageHeader.jsx";
+import { Table } from "../../components/common/Table.jsx";
+import { Spinner } from "../../components/common/Spinner.jsx";
+import { EmptyState } from "../../components/common/EmptyState.jsx";
+import { api } from "../../services/api.js";
+import { formatName } from "../../utils/format.js";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import CreateDoctorForm from "../../components/admin/CreateDoctorForm.jsx";
+import EditDoctorForm from "../../components/admin/EditDoctorForm.jsx";
+import { FaTimes, FaUserMd } from "react-icons/fa";
 
 const initialForm = {
-  firstName: '',
-  lastName: '',
-  email: '',
-  password: '',
-  phone: '',
-  specialization: '',
-  licenseNumber: '',
-  experience: '',
-  department: '',
-  consultationFee: '',
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  phone: "",
+  specialization: "",
+  licenseNumber: "",
+  experience: "",
+  department: "",
+  consultationFee: "",
 };
 
 const AdminDoctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [form, setForm] = useState(initialForm);
-  const [error, setError] = useState('');
+  const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
-  const fetchDoctors = async (query = '') => {
+  const fetchDoctors = async (query = "") => {
     setLoading(true);
     try {
-      const response = await api.get(`/doctors?search=${encodeURIComponent(query)}`);
+      const response = await api.get(
+        `/doctors?search=${encodeURIComponent(query)}`,
+      );
       setDoctors(response.data.doctors || []);
     } catch (err) {
       setDoctors([]);
@@ -44,136 +54,143 @@ const AdminDoctors = () => {
     fetchDoctors();
   }, []);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCreate = async (event) => {
-    event.preventDefault();
+  const handleCreate = async (formData, resetForm) => {
     setCreating(true);
-    setError('');
+    setError("");
     try {
-      await api.post('/doctors', {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        password: form.password,
-        phone: form.phone,
-        specialization: form.specialization,
-        licenseNumber: form.licenseNumber,
-        experience: Number(form.experience || 0),
-        department: form.department,
-        consultationFee: Number(form.consultationFee || 0),
+      await api.post("/doctors", {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        specialization: formData.specialization,
+        licenseNumber: formData.licenseNumber,
+        experience: Number(formData.experience || 0),
+        department: formData.department,
+        consultationFee: Number(formData.consultationFee || 0),
       });
-      setForm(initialForm);
+      if (resetForm) resetForm();
+      setShowModal(false);
+      toast.success("Doctor created successfully!");
       await fetchDoctors(search);
     } catch (err) {
-      setError(err.message || 'Unable to create doctor');
+      setError(err.message || "Unable to create doctor");
+      toast.error(err.message || "Unable to create doctor");
     } finally {
       setCreating(false);
     }
   };
 
-  return (
-    <DashboardLayout title="Doctor Directory" subtitle="Maintain provider roster and credentials">
-      <div className="space-y-6">
-        <PageHeader title="Doctors" subtitle="Search, onboard, and manage providers." />
+  const handleEdit = (doctor) => {
+    setSelectedDoctor(doctor);
+    setShowEditModal(true);
+    setError("");
+  };
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900">Add new doctor</h3>
-          <form onSubmit={handleCreate} className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <input
-              name="firstName"
-              value={form.firstName}
-              onChange={handleChange}
-              placeholder="First name"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              required
-            />
-            <input
-              name="lastName"
-              value={form.lastName}
-              onChange={handleChange}
-              placeholder="Last name"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              required
-            />
-            <input
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Email"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              required
-            />
-            <input
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="Phone"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-            />
-            <input
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Temporary password"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              required
-            />
-            <input
-              name="specialization"
-              value={form.specialization}
-              onChange={handleChange}
-              placeholder="Specialization"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              required
-            />
-            <input
-              name="licenseNumber"
-              value={form.licenseNumber}
-              onChange={handleChange}
-              placeholder="License number"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              required
-            />
-            <input
-              name="experience"
-              type="number"
-              value={form.experience}
-              onChange={handleChange}
-              placeholder="Experience (years)"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-              required
-            />
-            <input
-              name="department"
-              value={form.department}
-              onChange={handleChange}
-              placeholder="Department"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-            />
-            <input
-              name="consultationFee"
-              type="number"
-              value={form.consultationFee}
-              onChange={handleChange}
-              placeholder="Consultation fee"
-              className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
-            />
-            <button
-              type="submit"
-              disabled={creating}
-              className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow transition hover:bg-slate-800 disabled:opacity-60"
-            >
-              {creating ? 'Creating…' : 'Create doctor'}
-            </button>
-          </form>
-          {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
-        </div>
+  const handleUpdate = async (formData) => {
+    if (!selectedDoctor) return;
+    setUpdating(true);
+    setError("");
+    try {
+      await api.put(`/doctors/${selectedDoctor._id}`, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        specialization: formData.specialization,
+        licenseNumber: formData.licenseNumber,
+        experience: Number(formData.experience || 0),
+        department: formData.department,
+        consultationFee: Number(formData.consultationFee || 0),
+      });
+      setShowEditModal(false);
+      setSelectedDoctor(null);
+      toast.success("Doctor updated successfully!");
+      await fetchDoctors(search);
+    } catch (err) {
+      setError(err.message || "Unable to update doctor");
+      toast.error(err.message || "Unable to update doctor");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleToggleStatus = async (doctor) => {
+    const newStatus = doctor.user.status === 'active' ? 'inactive' : 'active';
+    try {
+      await api.patch(`/users/${doctor.user._id}/status`, { status: newStatus });
+
+      // Update local state
+      setDoctors(prev => prev.map(doc =>
+        doc.user._id === doctor.user._id
+          ? { ...doc, user: { ...doc.user, status: newStatus } }
+          : doc
+      ));
+      toast.success(`Doctor ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error("Failed to update status", error);
+      toast.error("Failed to update status");
+    }
+  };
+
+  return (
+    <DashboardLayout
+      title="Doctor Directory"
+      subtitle="Maintain provider roster and credentials"
+    >
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+      <div className="space-y-6">
+        <PageHeader
+          title="Doctors"
+          subtitle="Search, onboard, and manage providers."
+        />
+
+        {/* Modal for Create Doctor */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="relative w-full max-w-2xl mx-auto">
+              <button
+                className="absolute top-2 right-2 z-10 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700"
+                onClick={() => setShowModal(false)}
+                aria-label="Close"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+              <CreateDoctorForm
+                onCreate={handleCreate}
+                creating={creating}
+                error={error}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Modal for Edit Doctor */}
+        {showEditModal && selectedDoctor && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="relative w-full max-w-2xl mx-auto">
+              <button
+                className="absolute top-2 right-2 z-10 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700"
+                onClick={() => { setShowEditModal(false); setSelectedDoctor(null); }}
+                aria-label="Close"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+              <EditDoctorForm doctor={selectedDoctor} onUpdate={handleUpdate} updating={updating} error={error} />
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <input
@@ -193,21 +210,58 @@ const AdminDoctors = () => {
         {loading ? (
           <Spinner />
         ) : doctors.length === 0 ? (
-          <EmptyState title="No doctors found" description="Try a different filter or add a provider." />
+          <EmptyState
+            title="No doctors found"
+            description="Try a different filter or add a provider."
+          />
         ) : (
           <Table
-            columns={['Doctor', 'Email', 'Phone', 'Specialization']}
+            columns={["Doctor", "Email", "Phone", "Specialization", "Status", "Actions"]}
             rows={doctors}
             renderRow={(doctor) => (
               <tr key={doctor._id} className="text-sm text-slate-700">
                 <td className="px-5 py-4">{formatName(doctor.user)}</td>
                 <td className="px-5 py-4">{doctor.user?.email}</td>
-                <td className="px-5 py-4">{doctor.user?.phone || '—'}</td>
+                <td className="px-5 py-4">{doctor.user?.phone || "—"}</td>
                 <td className="px-5 py-4">{doctor.specialization}</td>
+                <td className="px-5 py-4">
+                  <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${doctor.user?.status === 'active'
+                      ? 'bg-green-50 text-green-700 ring-green-600/20'
+                      : 'bg-red-50 text-red-700 ring-red-600/20'
+                    }`}>
+                    {doctor.user?.status || 'Active'}
+                  </span>
+                </td>
+                <td className="px-5 py-4 flex gap-2">
+                  <button
+                    className="rounded-lg bg-yellow-500 px-3 py-1 text-xs font-semibold text-white hover:bg-yellow-600 transition"
+                    onClick={() => handleEdit(doctor)}
+                  >
+                    View / Edit
+                  </button>
+                  <button
+                    onClick={() => handleToggleStatus(doctor)}
+                    className={`rounded-lg px-3 py-1 text-xs font-semibold text-white transition ${doctor.user?.status === 'active'
+                        ? 'bg-red-500 hover:bg-red-600'
+                        : 'bg-green-500 hover:bg-green-600'
+                      }`}
+                  >
+                    {doctor.user?.status === 'active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                </td>
               </tr>
             )}
           />
         )}
+
+        {/* Fixed Create Doctor Button */}
+        <button
+          onClick={() => setShowModal(true)}
+          className="fixed bottom-8 right-8 z-40 flex items-center gap-2 rounded-full bg-blue-600 px-6 py-4 text-lg font-bold text-white shadow-lg hover:bg-blue-700 transition"
+        >
+          <FaUserMd className="w-6 h-6" /> Create Doctor
+        </button>
+        {/* <FloatingCreateDoctorButton onClick={() => setShowModal(true)} /> */}
       </div>
     </DashboardLayout>
   );

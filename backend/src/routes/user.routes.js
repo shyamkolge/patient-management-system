@@ -5,6 +5,7 @@ import {
     updateUser,
     deleteUser,
     changeUserRole,
+    updateUserStatus,
 } from '../controllers/user.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { isAdmin } from '../middleware/rbac.js';
@@ -20,5 +21,6 @@ router.get('/:id', getUserById);
 router.put('/:id', updateUser);
 router.delete('/:id', deleteUser);
 router.patch('/:id/role', changeUserRole);
+router.patch('/:id/status', updateUserStatus);
 
 export default router;

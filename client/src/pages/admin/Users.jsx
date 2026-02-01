@@ -49,11 +49,11 @@ const AdminUsers = () => {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search users"
-            className="w-full max-w-sm rounded-xl border border-slate-200 px-4 py-3 text-sm"
+            className="w-full max-w-sm rounded-xl border border-slate-400 px-4 py-2 text-sm"
           />
           <button
             onClick={() => fetchUsers(search)}
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600"
+            className="rounded-xl border bg-blue-600 border-slate-200 px-4 py-2 text-md font-medium text-white"
           >
             Search
           </button>

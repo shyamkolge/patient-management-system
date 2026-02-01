@@ -27,7 +27,9 @@ const doctorSchema = new mongoose.Schema(
             type: Number, // Years of experience
             required: [true, 'Experience is required'],
         },
+        
         department: String,
+
         consultationFee: {
             type: Number,
             default: 0,
@@ -43,6 +45,10 @@ const doctorSchema = new mongoose.Schema(
             },
         ],
         bio: String,
+        profileImage: {
+            type: String,
+            default: null,
+        },
     },
     {
         timestamps: true,

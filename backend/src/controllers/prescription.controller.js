@@ -1,6 +1,8 @@
 import Prescription from '../models/Prescription.js';
 import Patient from '../models/Patient.js';
 import Doctor from '../models/Doctor.js';
+import Notification from '../models/Notification.js';
+import { io, getReceiverSocketId } from '../services/socket.js';
 
 /**
  * Get all prescriptions (filtered by role)
@@ -146,6 +148,25 @@ export const createPrescription = async (req, res) => {
                 path: 'doctor',
                 populate: { path: 'user', select: 'firstName lastName' }
             });
+
+        // Create Notification
+        const notification = await Notification.create({
+            recipient: populatedPrescription.patient.user._id,
+            sender: req.user.id,
+            type: 'prescription_created',
+            message: `Dr. ${req.user.firstName} ${req.user.lastName} prescribed a new medication for you.`,
+            relatedId: populatedPrescription._id,
+            link: '/patient/prescriptions',
+        });
+
+        // Emit Socket Event to Patient
+        if (populatedPrescription.patient?.user?._id) {
+            const receiverSocketId = getReceiverSocketId(populatedPrescription.patient.user._id.toString());
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('prescription_created', populatedPrescription);
+                io.to(receiverSocketId).emit('newNotification', notification);
+            }
+        }
 
         res.status(201).json({
             success: true,

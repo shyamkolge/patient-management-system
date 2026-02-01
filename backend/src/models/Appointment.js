@@ -36,6 +36,29 @@ const appointmentSchema = new mongoose.Schema(
             default: 30,
         },
         cancelReason: String,
+        paymentStatus: {
+            type: String,
+            enum: ['pending', 'paid'],
+            default: 'pending',
+        },
+        paymentMode: {
+            type: String,
+            enum: ['online', 'offline'],
+            default: 'offline',
+        },
+        transactionId: {
+            type: String,
+        },
+        consultationNotes: String,
+        diagnosis: String,
+        treatment: String,
+        startedAt: Date,
+        completedAt: Date,
+        type: {
+            type: String,
+            enum: ['in-person', 'video', 'phone'],
+            default: 'in-person',
+        },
     },
     {
         timestamps: true,

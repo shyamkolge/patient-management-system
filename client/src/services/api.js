@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const ACCESS_TOKEN_KEY = 'prms_access_token';
 const REFRESH_TOKEN_KEY = 'prms_refresh_token';
@@ -29,6 +29,10 @@ const buildHeaders = (extra = {}, withAuth = true) => {
     'Content-Type': 'application/json',
     ...extra,
   };
+  if (headers['Content-Type'] === null) {
+    delete headers['Content-Type'];
+  }
+
   const token = tokenStorage.getAccess();
   if (withAuth && token) {
     headers.Authorization = `Bearer ${token}`;
@@ -91,11 +95,39 @@ const request = async (path, options = {}, retry = false) => {
 
 export const api = {
   get: (path, options = {}) => request(path, { ...options, method: 'GET' }),
-  post: (path, body, options = {}) =>
-    request(path, { ...options, method: 'POST', body: JSON.stringify(body) }),
-  put: (path, body, options = {}) =>
-    request(path, { ...options, method: 'PUT', body: JSON.stringify(body) }),
-  patch: (path, body, options = {}) =>
-    request(path, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
+  post: (path, body, options = {}) => {
+    const isFormData = body instanceof FormData;
+    return request(path, {
+      ...options,
+      method: 'POST',
+      body: isFormData ? body : JSON.stringify(body),
+      headers: isFormData ? { ...options.headers, 'Content-Type': null } : options.headers
+    });
+  },
+  put: (path, body, options = {}) => {
+    const isFormData = body instanceof FormData;
+    return request(path, {
+      ...options,
+      method: 'PUT',
+      body: isFormData ? body : JSON.stringify(body),
+      headers: isFormData ? { ...options.headers, 'Content-Type': null } : options.headers
+    });
+  },
+  patch: (path, body, options = {}) => {
+    const isFormData = body instanceof FormData;
+    return request(path, {
+      ...options,
+      method: 'PATCH',
+      body: isFormData ? body : JSON.stringify(body),
+      headers: isFormData ? { ...options.headers, 'Content-Type': null } : options.headers
+    });
+  },
   delete: (path, options = {}) => request(path, { ...options, method: 'DELETE' }),
+
+  // Lab Reports
+  uploadReport: (data) => api.post('/reports/upload', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  getReports: () => api.get('/reports'),
+  deleteReport: (id) => api.delete(`/reports/${id}`),
 };

@@ -2,6 +2,8 @@ import MedicalRecord from '../models/MedicalRecord.js';
 import Patient from '../models/Patient.js';
 import Doctor from '../models/Doctor.js';
 import cloudinary from '../config/cloudinary.js';
+import Notification from '../models/Notification.js';
+import { io, getReceiverSocketId } from '../services/socket.js';
 
 /**
  * Get all medical records (filtered by role)
@@ -148,6 +150,26 @@ export const createMedicalRecord = async (req, res) => {
                 path: 'doctor',
                 populate: { path: 'user', select: 'firstName lastName' }
             });
+
+        // Create Notification
+        const notification = await Notification.create({
+            recipient: populatedRecord.patient.user._id,
+            sender: req.user.id,
+            type: 'medical_record_created',
+            message: `Dr. ${req.user.firstName} ${req.user.lastName} added a new medical record for you.`,
+            relatedId: populatedRecord._id,
+            link: '/patient/records',
+        });
+
+        // Emit Socket Event to Patient
+        if (populatedRecord.patient?.user?._id) {
+            const receiverSocketId = getReceiverSocketId(populatedRecord.patient.user._id.toString());
+            if (receiverSocketId) {
+                // Emit both record update and new notification
+                io.to(receiverSocketId).emit('medical_record_updated', populatedRecord);
+                io.to(receiverSocketId).emit('newNotification', notification);
+            }
+        }
 
         res.status(201).json({
             success: true,

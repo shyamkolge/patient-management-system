@@ -3,10 +3,12 @@ import { register, login, refreshAccessToken, logout, getProfile } from '../cont
 import { authenticate } from '../middleware/auth.js';
 import { validate, loginSchema, registerSchema } from '../middleware/validation.js';
 
+import { upload } from '../middleware/upload.js';
+
 const router = express.Router();
 
 // Public routes
-router.post('/register', validate(registerSchema), register);
+router.post('/register', upload.single('profileImage'), validate(registerSchema), register);
 router.post('/login', validate(loginSchema), login);
 router.post('/refresh', refreshAccessToken);
 

@@ -16,7 +16,7 @@ export const getAllDoctors = async (req, res) => {
         }
 
         let doctors = await Doctor.find(query)
-            .populate('user', 'firstName lastName email phone')
+            .populate('user', 'firstName lastName email phone status')
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ createdAt: -1 });
@@ -27,6 +27,13 @@ export const getAllDoctors = async (req, res) => {
                 const fullName = `${doc.user.firstName} ${doc.user.lastName}`.toLowerCase();
                 return fullName.includes(search.toLowerCase());
             });
+        }
+
+        // Filter out inactive doctors unless the requester is an admin
+        // req.user might be undefined for public routes
+        const isAdmin = req.user && req.user.role === 'admin';
+        if (!isAdmin) {
+            doctors = doctors.filter(doc => doc.user.status === 'active');
         }
 
         const count = await Doctor.countDocuments(query);
@@ -121,12 +128,8 @@ export const createDoctor = async (req, res) => {
  */
 export const updateDoctor = async (req, res) => {
     try {
-        const doctor = await Doctor.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        ).populate('user', 'firstName lastName email phone');
-
+        // Find doctor first
+        const doctor = await Doctor.findById(req.params.id);
         if (!doctor) {
             return res.status(404).json({
                 success: false,
@@ -134,10 +137,37 @@ export const updateDoctor = async (req, res) => {
             });
         }
 
+        // If user fields are present, update User as well
+        const userUpdates = {};
+        if (req.body.firstName) userUpdates.firstName = req.body.firstName;
+        if (req.body.lastName) userUpdates.lastName = req.body.lastName;
+        if (req.body.email) userUpdates.email = req.body.email;
+        if (req.body.phone) userUpdates.phone = req.body.phone;
+        if (Object.keys(userUpdates).length > 0) {
+            await User.findByIdAndUpdate(doctor.user, userUpdates, { new: true, runValidators: true });
+        }
+
+        // Remove user fields from doctor update
+        const doctorUpdates = { ...req.body };
+        delete doctorUpdates.firstName;
+        delete doctorUpdates.lastName;
+        delete doctorUpdates.email;
+        delete doctorUpdates.phone;
+
+        // Update doctor document
+        await Doctor.findByIdAndUpdate(
+            req.params.id,
+            doctorUpdates,
+            { new: true, runValidators: true }
+        );
+
+        // Return the latest doctor with populated user
+        const updatedDoctor = await Doctor.findById(req.params.id).populate('user', 'firstName lastName email phone');
+
         res.status(200).json({
             success: true,
             message: 'Doctor updated successfully',
-            data: doctor,
+            data: updatedDoctor,
         });
     } catch (error) {
         console.error('Update doctor error:', error);

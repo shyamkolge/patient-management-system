@@ -176,3 +176,44 @@ export const changeUserRole = async (req, res) => {
         });
     }
 };
+
+/**
+ * Update user status (Admin only)
+ */
+export const updateUserStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        if (!['active', 'inactive', 'suspended'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status',
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        ).select('-password -refreshToken');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'User status updated successfully',
+            data: user,
+        });
+    } catch (error) {
+        console.error('Update user status error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating user status',
+        });
+    }
+};

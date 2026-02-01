@@ -6,9 +6,14 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '.
 /**
  * Register a new user
  */
+import { uploadToCloudinary } from '../utils/cloudinary.js';
+
+/**
+ * Register a new user
+ */
 export const register = async (req, res) => {
     try {
-        const { email, password, firstName, lastName, role, ...additionalData } = req.body;
+        let { email, password, firstName, lastName, role, ...additionalData } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });
@@ -19,6 +24,17 @@ export const register = async (req, res) => {
             });
         }
 
+        let profileImageUrl = null;
+        if (req.file) {
+            try {
+                const result = await uploadToCloudinary(req.file.buffer);
+                profileImageUrl = result.secure_url;
+            } catch (uploadError) {
+                console.error('Image upload failed:', uploadError);
+                // Proceed without image or handle error? Proceeding for now.
+            }
+        }
+
         // Create user
         const user = await User.create({
             email,
@@ -27,7 +43,24 @@ export const register = async (req, res) => {
             lastName,
             role: role || 'patient',
             phone: additionalData.phone,
+            profileImage: profileImageUrl,
         });
+
+        // Parse patientData/doctorData if they are strings (from FormData)
+        if (typeof additionalData.patientData === 'string') {
+            try {
+                additionalData.patientData = JSON.parse(additionalData.patientData);
+            } catch (e) {
+                console.error('Failed to parse patientData', e);
+            }
+        }
+        if (typeof additionalData.doctorData === 'string') {
+            try {
+                additionalData.doctorData = JSON.parse(additionalData.doctorData);
+            } catch (e) {
+                console.error('Failed to parse doctorData', e);
+            }
+        }
 
         // Create role-specific profile
         if (user.role === 'patient' && additionalData.patientData) {
@@ -263,6 +296,7 @@ export const getProfile = async (req, res) => {
                     role: user.role,
                     phone: user.phone,
                     status: user.status,
+                    profileImage: user.profileImage,
                 },
                 profile: profileData,
             },

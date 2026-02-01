@@ -1,9 +1,10 @@
-import express from 'express';
 import dotenv from 'dotenv';
+import express from 'express';
+import { app, server } from "./services/socket.js";
+import connectDB from './db/database.js';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import connectDB from './config/database.js';
 
 // Import routes
 import authRoutes from './routes/auth.routes.js';
@@ -11,14 +12,14 @@ import userRoutes from './routes/user.routes.js';
 import patientRoutes from './routes/patient.routes.js';
 import doctorRoutes from './routes/doctor.routes.js';
 import appointmentRoutes from './routes/appointment.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 import medicalRecordRoutes from './routes/medicalRecord.routes.js';
 import prescriptionRoutes from './routes/prescription.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
+import reportRoutes from './routes/report.routes.js';
 
 // Load environment variables
 dotenv.config();
-
-// Initialize Express app
-const app = express();
 
 // Connect to MongoDB
 connectDB();
@@ -43,8 +44,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -83,13 +88,11 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🌐 API URL: http://localhost:${PORT}`);
 });
 
-export default app;

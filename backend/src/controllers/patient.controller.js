@@ -123,11 +123,8 @@ export const createPatient = async (req, res) => {
  */
 export const updatePatient = async (req, res) => {
     try {
-        const patient = await Patient.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        ).populate('user', 'firstName lastName email phone');
+        // Find patient first
+        const patient = await Patient.findById(req.params.id);
 
         if (!patient) {
             return res.status(404).json({
@@ -136,10 +133,37 @@ export const updatePatient = async (req, res) => {
             });
         }
 
+        // If user fields are present, update User as well
+        const userUpdates = {};
+        if (req.body.firstName) userUpdates.firstName = req.body.firstName;
+        if (req.body.lastName) userUpdates.lastName = req.body.lastName;
+        if (req.body.email) userUpdates.email = req.body.email;
+        if (req.body.phone) userUpdates.phone = req.body.phone;
+        if (Object.keys(userUpdates).length > 0) {
+            await User.findByIdAndUpdate(patient.user, userUpdates, { new: true, runValidators: true });
+        }
+
+        // Remove user fields from patient update
+        const patientUpdates = { ...req.body };
+        delete patientUpdates.firstName;
+        delete patientUpdates.lastName;
+        delete patientUpdates.email;
+        delete patientUpdates.phone;
+
+        // Update patient document
+        await Patient.findByIdAndUpdate(
+            req.params.id,
+            patientUpdates,
+            { new: true, runValidators: true }
+        );
+
+        // Return the latest patient with populated user
+        const updatedPatient = await Patient.findById(req.params.id).populate('user', 'firstName lastName email phone');
+
         res.status(200).json({
             success: true,
             message: 'Patient updated successfully',
-            data: patient,
+            data: updatedPatient,
         });
     } catch (error) {
         console.error('Update patient error:', error);

@@ -46,6 +46,10 @@ const patientSchema = new mongoose.Schema(
             policyNumber: String,
             groupNumber: String,
         },
+        profileImage: {
+            type: String,
+            default: null,
+        },
     },
     {
         timestamps: true,
