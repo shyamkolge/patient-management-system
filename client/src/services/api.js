@@ -130,4 +130,7 @@ export const api = {
   }),
   getReports: () => api.get('/reports'),
   deleteReport: (id) => api.delete(`/reports/${id}`),
+
+  // Medical Record Attachments
+  getMedicalRecordAttachments: () => api.get('/medical-records/attachments'),
 };

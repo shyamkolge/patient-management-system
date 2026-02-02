@@ -7,6 +7,7 @@ import {
     createMedicalRecord,
     updateMedicalRecord,
     uploadAttachment,
+    getPatientAttachments,
 } from '../controllers/medicalRecord.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { isDoctor, isAdminOrDoctor } from '../middleware/rbac.js';
@@ -21,6 +22,7 @@ const upload = multer({ dest: 'uploads/' });
 router.use(authenticate);
 
 router.get('/', getAllMedicalRecords);
+router.get('/attachments', getPatientAttachments);
 router.get('/:id', getMedicalRecordById);
 router.get('/patient/:patientId', isAdminOrDoctor, getPatientMedicalRecords);
 

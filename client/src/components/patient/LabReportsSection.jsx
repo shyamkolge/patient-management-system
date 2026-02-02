@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 
 export const LabReportsSection = () => {
     const [reports, setReports] = useState([]);
+    const [attachments, setAttachments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
@@ -21,8 +22,19 @@ export const LabReportsSection = () => {
 
     const fetchReports = async () => {
         try {
-            const response = await api.getReports();
-            setReports(response || []);
+            setLoading(true);
+            // Fetch patient-uploaded reports
+            const reportsResponse = await api.getReports();
+            setReports(reportsResponse || []);
+
+            // Fetch doctor-uploaded attachments from medical records
+            try {
+                const attachmentsResponse = await api.getMedicalRecordAttachments();
+                setAttachments(attachmentsResponse?.data || []);
+            } catch (err) {
+                console.warn('Could not fetch medical record attachments:', err);
+                setAttachments([]);
+            }
         } catch (error) {
             console.error('Failed to fetch reports', error);
         } finally {
@@ -94,6 +106,12 @@ export const LabReportsSection = () => {
         setFile(null);
     };
 
+    // Combine reports and attachments, sorted by date
+    const allDocuments = [
+        ...reports.map(r => ({ ...r, type: 'patient', uploadDate: r.uploadDate })),
+        ...attachments.map(a => ({ ...a, type: 'doctor', uploadDate: a.uploadDate })),
+    ].sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -110,7 +128,7 @@ export const LabReportsSection = () => {
                 <div className="flex justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                 </div>
-            ) : reports.length === 0 ? (
+            ) : allDocuments.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center">
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
                         <FileText className="h-6 w-6 text-slate-400" />
@@ -119,10 +137,75 @@ export const LabReportsSection = () => {
                     <p className="text-sm text-slate-500">Upload your blood tests, X-rays, or other medical documents.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {reports.map((report) => (
-                        <LabReportCard key={report._id} report={report} onDelete={handleDelete} />
-                    ))}
+                <div>
+                    {/* Doctor-uploaded documents section */}
+                    {attachments.length > 0 && (
+                        <div className="mb-6">
+                            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+                                Documents from Consultations
+                            </h3>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {attachments.map((attachment) => (
+                                    <div key={attachment._id} className="group relative flex flex-col rounded-xl border border-purple-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                                        <div className="mb-4 flex h-32 w-full items-center justify-center rounded-lg bg-purple-50 overflow-hidden">
+                                            {attachment.fileType?.includes('pdf') || attachment.fileUrl?.endsWith('.pdf') ? (
+                                                <FileText className="h-12 w-12 text-purple-500" />
+                                            ) : (
+                                                <img
+                                                    src={attachment.fileUrl}
+                                                    alt={attachment.fileName}
+                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <h4 className="font-semibold text-slate-900 line-clamp-1 text-sm" title={attachment.fileName}>
+                                                {attachment.fileName}
+                                            </h4>
+                                            <p className="text-xs text-slate-500 mt-1">{new Date(attachment.uploadDate).toLocaleDateString()}</p>
+                                            <p className="text-xs text-purple-600 font-medium mt-2">📋 {attachment.diagnosis || 'Consultation'}</p>
+                                            <p className="text-xs text-slate-600 mt-1">By: {attachment.doctor}</p>
+                                        </div>
+
+                                        <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                                            <a
+                                                href={attachment.fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-purple-50 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+                                            >
+                                                View
+                                            </a>
+                                            <a
+                                                href={attachment.fileUrl}
+                                                download
+                                                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-purple-50 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+                                            >
+                                                Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Patient-uploaded reports section */}
+                    {reports.length > 0 && (
+                        <div>
+                            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
+                                Your Uploaded Reports
+                            </h3>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {reports.map((report) => (
+                                    <LabReportCard key={report._id} report={report} onDelete={handleDelete} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

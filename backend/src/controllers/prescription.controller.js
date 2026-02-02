@@ -5,6 +5,43 @@ import Notification from '../models/Notification.js';
 import { io, getReceiverSocketId } from '../services/socket.js';
 import { sendAppointmentConfirmedNotification } from '../utils/pingram.js';
 
+const parseDurationInDays = (duration) => {
+    if (!duration) return null;
+    const text = String(duration).toLowerCase();
+    const match = text.match(/(\d+)\s*(day|days|week|weeks|month|months)/i);
+    if (match) {
+        const value = Number(match[1]);
+        const unit = match[2];
+        const multiplier = unit.startsWith('week') ? 7 : unit.startsWith('month') ? 30 : 1;
+        return value * multiplier;
+    }
+    const numberOnly = text.match(/(\d+)/);
+    return numberOnly ? Number(numberOnly[1]) : null;
+};
+
+const autoCompletePrescription = async (prescription) => {
+    if (!prescription || prescription.status !== 'active') return prescription;
+
+    const now = Date.now();
+    let validUntil = prescription.validUntil ? new Date(prescription.validUntil) : null;
+
+    if (!validUntil) {
+        const duration = prescription.medications?.[0]?.duration;
+        const days = parseDurationInDays(duration);
+        if (days && prescription.issueDate) {
+            validUntil = new Date(prescription.issueDate);
+            validUntil.setDate(validUntil.getDate() + days);
+        }
+    }
+
+    if (validUntil && validUntil.getTime() <= now) {
+        prescription.status = 'completed';
+        await prescription.save();
+    }
+
+    return prescription;
+};
+
 /**
  * Get all prescriptions (filtered by role)
  */
@@ -36,6 +73,8 @@ export const getAllPrescriptions = async (req, res) => {
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ issueDate: -1 });
+
+        await Promise.all(prescriptions.map(autoCompletePrescription));
 
         const count = await Prescription.countDocuments(query);
 
@@ -80,6 +119,8 @@ export const getPrescriptionById = async (req, res) => {
             });
         }
 
+        await autoCompletePrescription(prescription);
+
         res.status(200).json({
             success: true,
             data: prescription,
@@ -104,6 +145,8 @@ export const getPatientPrescriptions = async (req, res) => {
                 populate: { path: 'user', select: 'firstName lastName' }
             })
             .sort({ issueDate: -1 });
+
+        await Promise.all(prescriptions.map(autoCompletePrescription));
 
         res.status(200).json({
             success: true,

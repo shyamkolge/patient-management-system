@@ -51,6 +51,14 @@ export const LabReportCard = ({ report, onDelete }) => {
                     <Eye className="h-3.5 w-3.5" /> View
                 </a>
 
+                <a
+                    href={report.fileUrl}
+                    download
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-slate-50 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 hover:text-blue-600 transition-colors"
+                >
+                    <Download className="h-3.5 w-3.5" /> Download
+                </a>
+
                 <button
                     onClick={handleDelete}
                     disabled={isDeleting}

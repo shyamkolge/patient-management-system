@@ -277,3 +277,60 @@ export const uploadAttachment = async (req, res) => {
         });
     }
 };
+
+/**
+ * Get all attachments for patient's medical records
+ */
+export const getPatientAttachments = async (req, res) => {
+    try {
+        const { id } = req.user;
+        
+        // Get patient record
+        const patient = await Patient.findOne({ user: id });
+        if (!patient) {
+            return res.status(404).json({
+                success: false,
+                message: 'Patient not found',
+            });
+        }
+
+        // Get all medical records for this patient with attachments
+        const records = await MedicalRecord.find({ patient: patient._id })
+            .select('attachments visitDate diagnosis doctor')
+            .populate({
+                path: 'doctor',
+                populate: { path: 'user', select: 'firstName lastName' }
+            })
+            .sort({ visitDate: -1 });
+
+        // Extract all attachments with metadata
+        const attachments = [];
+        records.forEach(record => {
+            if (record.attachments && record.attachments.length > 0) {
+                record.attachments.forEach(attachment => {
+                    attachments.push({
+                        ...attachment.toObject(),
+                        _id: attachment._id || `${record._id}-${attachment.fileName}`,
+                        recordId: record._id,
+                        visitDate: record.visitDate,
+                        diagnosis: record.diagnosis,
+                        doctor: record.doctor?.user ? `Dr. ${record.doctor.user.firstName} ${record.doctor.user.lastName}` : 'Unknown Doctor',
+                        uploadedBy: 'doctor',
+                    });
+                });
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            data: attachments,
+        });
+    } catch (error) {
+        console.error('Get patient attachments error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching attachments',
+        });
+    }
+};
+
