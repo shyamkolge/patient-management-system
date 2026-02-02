@@ -4,6 +4,7 @@ import Doctor from '../models/Doctor.js';
 import Notification from '../models/Notification.js';
 import { io, getReceiverSocketId } from '../services/socket.js';
 import { sendAppointmentConfirmedNotification } from '../utils/pingram.js';
+import { sendPrescriptionEmail } from '../utils/email.js';
 
 const parseDurationInDays = (duration) => {
     if (!duration) return null;
@@ -291,21 +292,53 @@ export const sendConsultationNotification = async (req, res) => {
         }
 
         // Get prescription details if available
-        let prescriptionDetails = '';
+        let prescription = null;
+        let prescriptionData = null;
+        
         if (prescriptionId) {
-            const prescription = await Prescription.findById(prescriptionId)
-                .populate('doctor', 'specialization')
-                .populate('patient', 'dateOfBirth');
+            prescription = await Prescription.findById(prescriptionId)
+                .populate({
+                    path: 'doctor',
+                    populate: { path: 'user', select: 'firstName lastName' }
+                });
 
             if (prescription) {
-                prescriptionDetails = `
+                prescriptionData = {
+                    medications: prescription.medications,
+                    instructions: prescription.instructions,
+                    duration: prescription.duration,
+                    doctorName: prescription.doctor?.user ? 
+                        `Dr. ${prescription.doctor.user.firstName} ${prescription.doctor.user.lastName}` : 
+                        'Doctor',
+                    specialization: prescription.doctor?.specialization,
+                    consultationSummary: consultationSummary,
+                    followUpDate: prescription.followUpDate,
+                };
+
+                // Send prescription email via nodemailer
+                try {
+                    await sendPrescriptionEmail(
+                        patient.user.email,
+                        `${patient.user.firstName} ${patient.user.lastName}`,
+                        prescriptionData
+                    );
+                    console.log('✅ Prescription email sent successfully');
+                } catch (emailError) {
+                    console.error('❌ Failed to send prescription email:', emailError);
+                }
+            }
+        }
+
+        // Legacy text prescription details for SMS
+        let prescriptionDetails = '';
+        if (prescription) {
+            prescriptionDetails = `
 Medications:
 ${prescription.medications.map((med, idx) => `${idx + 1}. ${med.name} - ${med.dosage} (${med.frequency})`).join('\n')}
 
 ${prescription.instructions ? `Instructions: ${prescription.instructions}` : ''}
 ${prescription.duration ? `Duration: ${prescription.duration}` : ''}
-                `.trim();
-            }
+            `.trim();
         }
 
         // Prepare SMS message

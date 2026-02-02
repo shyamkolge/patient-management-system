@@ -1,5 +1,5 @@
 import express from 'express';
-import { createOrder } from '../controllers/payment.controller.js';
+import { createOrder, verifyPayment } from '../controllers/payment.controller.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -8,5 +8,6 @@ const router = express.Router();
 router.use(authenticate);
 
 router.post('/order', createOrder);
+router.post('/verify', verifyPayment);
 
 export default router;
