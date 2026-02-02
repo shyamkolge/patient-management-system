@@ -95,11 +95,20 @@ const PatientAppointments = () => {
           order_id: orderData.order.id,
           handler: async function (response) {
             try {
+              // First verify payment and send receipt email
+              await api.post('/payment/verify', {
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                doctorId: formData.doctor
+              });
+
+              // Then create appointment
               await submitToApi({
                 ...formData,
                 paymentResult: response
               });
-              toast.success("Appointment booked successfully!");
+              toast.success("✅ Payment successful! Receipt sent to your email.");
               loadData();
               setSubmitting(false);
               setShowBookingModal(false);

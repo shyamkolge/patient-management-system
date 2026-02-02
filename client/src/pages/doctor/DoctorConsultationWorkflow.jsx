@@ -82,6 +82,7 @@ const DoctorConsultationWorkflow = () => {
       ],
       notes: "",
     },
+    prescriptionId: null,
     files: [],
   });
 
@@ -318,11 +319,19 @@ Status: COMPLETED
 
       try {
         setWorkflowSubmitting(true);
-        await doctorApi.createPrescription({
+        const createdPrescription = await doctorApi.createPrescription({
           patient: workflowData.patientId,
           medications: workflowData.prescription.medications,
           instructions: workflowData.prescription.notes,
         });
+        const createdId =
+          createdPrescription?._id || createdPrescription?.data?._id || null;
+        if (createdId) {
+          setWorkflowData((prev) => ({
+            ...prev,
+            prescriptionId: createdId,
+          }));
+        }
         toast.success("✅ Prescription created successfully!", {
           autoClose: 2000,
         });

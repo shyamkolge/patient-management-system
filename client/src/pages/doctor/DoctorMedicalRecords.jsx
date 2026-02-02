@@ -43,7 +43,7 @@ const DoctorMedicalRecords = () => {
   const filteredRecords = records.filter((record) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
-    const patientName = formatName(record.patient).toLowerCase();
+    const patientName = formatName(record.patient?.user || record.patient).toLowerCase();
     const diagnosis = record.diagnosis?.toLowerCase() || '';
     return patientName.includes(search) || diagnosis.includes(search);
   });
@@ -55,11 +55,13 @@ const DoctorMedicalRecords = () => {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h3 className="font-semibold text-slate-900">
-                {formatName(record.patient)}
+                {formatName(record.patient?.user || record.patient)}
               </h3>
               <Badge tone="info">{formatDate(new Date(record.createdAt))}</Badge>
             </div>
-            <p className="text-sm text-slate-600">{record.patient?.email}</p>
+            <p className="text-sm text-slate-600">
+              {record.patient?.user?.email || record.patient?.email || '—'}
+            </p>
           </div>
           <button
             onClick={() => setSelectedRecord(record)}
@@ -203,7 +205,7 @@ const DoctorMedicalRecords = () => {
                 <option value="">Choose a patient...</option>
                 {patients.map((patient) => (
                   <option key={patient._id} value={patient._id}>
-                    {formatName(patient)} - {patient.email}
+                    {formatName(patient?.user || patient)} - {patient?.user?.email || patient?.email || '—'}
                   </option>
                 ))}
               </select>
@@ -374,38 +376,40 @@ const DoctorMedicalRecords = () => {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
               <div className="flex items-start gap-4 mb-4">
                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full bg-white ring-4 ring-blue-100">
-                  {record.patient?.profileImage ? (
+                  {record.patient?.user?.profileImage || record.patient?.profileImage ? (
                     <img
-                      src={record.patient.profileImage}
+                      src={record.patient?.user?.profileImage || record.patient?.profileImage}
                       alt="Patient"
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xl font-bold text-slate-500">
-                      {record.patient?.firstName?.charAt(0)}
-                      {record.patient?.lastName?.charAt(0)}
+                      {record.patient?.user?.firstName?.charAt(0) || record.patient?.firstName?.charAt(0)}
+                      {record.patient?.user?.lastName?.charAt(0) || record.patient?.lastName?.charAt(0)}
                     </div>
                   )}
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-slate-900">
-                    {formatName(record.patient)}
+                    {formatName(record.patient?.user || record.patient)}
                   </h3>
-                  <p className="text-slate-600">{record.patient?.email}</p>
+                  <p className="text-slate-600">
+                    {record.patient?.user?.email || record.patient?.email || '—'}
+                  </p>
                   <div className="mt-2 flex gap-4 text-sm">
                     <div>
                       <span className="text-slate-500">Age: </span>
                       <span className="text-slate-900">
-                        {record.patient?.dateOfBirth
+                        {record.patient?.dateOfBirth || record.patient?.user?.dateOfBirth
                           ? new Date().getFullYear() -
-                            new Date(record.patient.dateOfBirth).getFullYear()
+                            new Date(record.patient?.dateOfBirth || record.patient?.user?.dateOfBirth).getFullYear()
                           : 'N/A'}
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-500">Blood Group: </span>
                       <span className="text-slate-900">
-                        {record.patient?.bloodGroup || 'N/A'}
+                        {record.patient?.bloodGroup || record.patient?.user?.bloodGroup || 'N/A'}
                       </span>
                     </div>
                   </div>
