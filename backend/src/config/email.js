@@ -3,17 +3,25 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASSWORD exists:", process.env.EMAIL_PASSWORD);
+
+
 // Create transporter for sending emails
 // Using port 465 with SSL for better compatibility with hosting platforms like Render
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    host: "smtp.gmail.com",
+    port: 587,          // ✅ use 587 on Render
+    secure: false,      // ✅ must be false for 587
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
     },
+    tls: {
+        rejectUnauthorized: false
+    }
 });
+
 
 // Verify transporter connection (non-blocking)
 if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
