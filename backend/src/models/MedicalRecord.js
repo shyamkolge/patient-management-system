@@ -26,6 +26,7 @@ const medicalRecordSchema = new mongoose.Schema(
             required: [true, 'Chief complaint is required'],
         },
         symptoms: [String],
+        observations: String, // Doctor's clinical observations
         diagnosis: {
             type: String,
             required: [true, 'Diagnosis is required'],
@@ -63,6 +64,35 @@ const medicalRecordSchema = new mongoose.Schema(
         ],
         notes: String,
         followUpDate: Date,
+        // Consultation tracking
+        consultationStatus: {
+            type: String,
+            enum: ['ONGOING', 'COMPLETED', 'LOCKED'],
+            default: 'ONGOING',
+        },
+        consultationStartTime: {
+            type: Date,
+            default: Date.now,
+        },
+        consultationEndTime: Date,
+        consultationDuration: Number, // in minutes
+        consultationSummary: String,
+        // Payment tracking
+        paymentStatus: {
+            type: String,
+            enum: ['PENDING', 'PAYMENT_RECEIVED', 'COMPLETED'],
+            default: 'PENDING',
+        },
+        paymentAmount: Number,
+        paymentMode: {
+            type: String,
+            enum: ['online', 'offline', 'insurance'],
+        },
+        invoiceGenerated: {
+            type: Boolean,
+            default: false,
+        },
+        invoiceUrl: String,
     },
     {
         timestamps: true,

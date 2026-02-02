@@ -3,6 +3,7 @@ import Patient from '../models/Patient.js';
 import Doctor from '../models/Doctor.js';
 import Notification from '../models/Notification.js';
 import { io, getReceiverSocketId } from '../services/socket.js';
+import { sendAppointmentConfirmedNotification } from '../utils/pingram.js';
 
 /**
  * Get all prescriptions (filtered by role)
@@ -219,6 +220,133 @@ export const updatePrescription = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error updating prescription',
+        });
+    }
+};
+
+/**
+ * Send consultation completion notification (SMS and Email with prescription details)
+ */
+export const sendConsultationNotification = async (req, res) => {
+    try {
+        const { patientId, prescriptionId, consultationSummary } = req.body;
+
+        if (!patientId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Patient ID is required',
+            });
+        }
+
+        // Get patient details
+        const patient = await Patient.findById(patientId).populate('user', 'firstName lastName email phone');
+        if (!patient || !patient.user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Patient not found',
+            });
+        }
+
+        // Get prescription details if available
+        let prescriptionDetails = '';
+        if (prescriptionId) {
+            const prescription = await Prescription.findById(prescriptionId)
+                .populate('doctor', 'specialization')
+                .populate('patient', 'dateOfBirth');
+
+            if (prescription) {
+                prescriptionDetails = `
+Medications:
+${prescription.medications.map((med, idx) => `${idx + 1}. ${med.name} - ${med.dosage} (${med.frequency})`).join('\n')}
+
+${prescription.instructions ? `Instructions: ${prescription.instructions}` : ''}
+${prescription.duration ? `Duration: ${prescription.duration}` : ''}
+                `.trim();
+            }
+        }
+
+        // Prepare SMS message
+        const smsMessage = `Hello ${patient.user.firstName}, your consultation is complete. ${prescriptionDetails ? 'Prescription details sent via email.' : 'Thank you for visiting.'}`;
+
+        // Prepare Email HTML
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .header { background-color: #3b82f6; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+        .content { padding: 20px; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-weight: bold; color: #3b82f6; margin-bottom: 10px; }
+        .medication { background-color: #f0f9ff; padding: 10px; margin: 10px 0; border-left: 4px solid #3b82f6; }
+        .footer { background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Consultation Complete</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${patient.user.firstName} ${patient.user.lastName},</p>
+            <p>Thank you for your consultation. Here are your details:</p>
+            
+            ${consultationSummary ? `
+            <div class="section">
+                <div class="section-title">Consultation Summary</div>
+                <pre style="background-color: #f9fafb; padding: 15px; border-radius: 5px;">${consultationSummary}</pre>
+            </div>
+            ` : ''}
+            
+            ${prescriptionDetails ? `
+            <div class="section">
+                <div class="section-title">Prescription Details</div>
+                <div style="white-space: pre-line;">${prescriptionDetails}</div>
+            </div>
+            ` : ''}
+            
+            <div class="section">
+                <p><strong>Next Steps:</strong></p>
+                <ul>
+                    <li>Follow the prescribed treatment plan</li>
+                    <li>Take medications as instructed</li>
+                    <li>Attend follow-up appointments as scheduled</li>
+                    <li>Contact us for any concerns</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from Patient Records Management System</p>
+            <p>© 2026 Medical Clinic. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+        `;
+
+        // Send notification via NotificationAPI
+        await sendAppointmentConfirmedNotification({
+            toNumber: patient.user.phone || '+1234567890', // Use patient's phone if available
+            toEmail: patient.user.email,
+            toId: patient.user.email,
+            smsMessage: smsMessage,
+            emailSubject: 'Consultation Complete - Prescription Details',
+            emailHtml: emailHtml
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Consultation notification sent successfully to patient',
+        });
+
+    } catch (error) {
+        console.error('Send consultation notification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error sending consultation notification',
+            error: error.message
         });
     }
 };

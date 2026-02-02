@@ -158,17 +158,19 @@ const DoctorPatients = () => {
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-xl font-bold text-slate-500">
-                          {patient.firstName?.charAt(0)}
-                          {patient.lastName?.charAt(0)}
+                            {patient.user?.firstName?.charAt(0)}
+                            {patient.user?.lastName?.charAt(0)}
                         </div>
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-slate-900">{formatName(patient)}</h3>
-                      <p className="text-sm text-slate-600">{patient.email}</p>
-                      {patient.phone && (
-                        <p className="text-sm text-slate-500">{patient.phone}</p>
-                      )}
+                        <h3 className="font-semibold text-slate-900">
+                          {patient.user ? formatName(patient.user) : formatName(patient)}
+                        </h3>
+                        <p className="text-sm text-slate-600">{patient.user?.email || patient.email || '—'}</p>
+                        {(patient.user?.phone || patient.phone) && (
+                          <p className="text-sm text-slate-500">{patient.user?.phone || patient.phone}</p>
+                        )}
                     </div>
                   </div>
 
@@ -220,9 +222,9 @@ const DoctorPatients = () => {
 
       {/* Patient Details Modal */}
       {selectedPatient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
           <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-6">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4 sm:p-6">
               <h2 className="text-2xl font-bold text-slate-900">Patient Details</h2>
               <button
                 onClick={closePatientDetails}
@@ -244,11 +246,11 @@ const DoctorPatients = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {/* Patient Info */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
-                <div className="flex items-start gap-6">
-                  <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-full bg-white ring-4 ring-blue-100">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
+                <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+                  <div className="h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 overflow-hidden rounded-full bg-white ring-4 ring-blue-100">
                     {selectedPatient.profileImage ? (
                       <img
                         src={selectedPatient.profileImage}
@@ -257,20 +259,24 @@ const DoctorPatients = () => {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-slate-500">
-                        {selectedPatient.firstName?.charAt(0)}
-                        {selectedPatient.lastName?.charAt(0)}
+                        {selectedPatient.user?.firstName?.charAt(0)}
+                        {selectedPatient.user?.lastName?.charAt(0)}
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-slate-900">
-                      {formatName(selectedPatient)}
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900">
+                      {selectedPatient.user ? formatName(selectedPatient.user) : formatName(selectedPatient)}
                     </h3>
-                    <p className="text-slate-600">{selectedPatient.email}</p>
-                    {selectedPatient.phone && (
-                      <p className="text-slate-600">{selectedPatient.phone}</p>
+                    <p className="text-slate-600">
+                      {selectedPatient.user?.email || selectedPatient.email || "—"}
+                    </p>
+                    {(selectedPatient.user?.phone || selectedPatient.phone) && (
+                      <p className="text-slate-600">
+                        {selectedPatient.user?.phone || selectedPatient.phone}
+                      </p>
                     )}
-                    <div className="mt-3 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+                    <div className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 md:grid-cols-4">
                       {selectedPatient.dateOfBirth && (
                         <div>
                           <span className="text-slate-500">DOB: </span>
@@ -296,10 +302,18 @@ const DoctorPatients = () => {
                         </div>
                       )}
                       {selectedPatient.address && (
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
                           <span className="text-slate-500">Address: </span>
                           <span className="font-medium text-slate-900">
-                            {selectedPatient.address}
+                            {[
+                              selectedPatient.address.street,
+                              selectedPatient.address.city,
+                              selectedPatient.address.state,
+                              selectedPatient.address.zipCode,
+                              selectedPatient.address.country,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "—"}
                           </span>
                         </div>
                       )}

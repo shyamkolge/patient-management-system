@@ -1,12 +1,27 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layouts/DashboardLayout.jsx';
 import { StatCard } from '../../components/common/StatCard.jsx';
 import { Spinner } from '../../components/common/Spinner.jsx';
-import { LineChart, BarChart, DonutChart } from '../../components/common/Charts.jsx';
 import { doctorApi } from '../../api/doctorApi.js';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useSocketContext } from '../../context/SocketContext.jsx';
 import { formatTime, formatName } from '../../utils/format.js';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import {
   FaCalendarCheck,
   FaClock,
@@ -16,11 +31,13 @@ import {
   FaPrescriptionBottleAlt,
   FaFileMedical,
   FaEye,
+  FaUpload,
 } from 'react-icons/fa';
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
   const { socket } = useSocketContext();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [weeklyData, setWeeklyData] = useState([]);
@@ -72,6 +89,8 @@ const DoctorDashboard = () => {
     };
   }, [socket]);
 
+  const openWorkflow = (tab) => navigate('/doctor/consultation', { state: { tab } });
+
   const currentTime = new Date();
   const currentHour = currentTime.getHours();
   const currentMinutes = currentTime.getMinutes();
@@ -87,28 +106,13 @@ const DoctorDashboard = () => {
       ) : (
         <div className="space-y-6">
           {/* Welcome Section */}
-          <div className="flex items-center gap-6 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-600 p-6 shadow-lg text-white">
-            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-full bg-white/20 ring-4 ring-white/30">
-              {user?.profileImage ? (
-                <img
-                  src={user.profileImage}
-                  alt="Profile"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center text-3xl font-bold">
-                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-                </div>
-              )}
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">
-                Welcome back, Dr. {user?.lastName || 'Doctor'}!
-              </h2>
-              <p className="text-blue-100">
-                {user?.specialization || 'General Practice'} • Ready to help your patients today
-              </p>
-            </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-slate-900">
+              Good morning, Dr. {user?.lastName || 'Doctor'} 👋
+            </h1>
+            <p className="text-slate-500">
+              Here's what's happening with your patients today.
+            </p>
           </div>
 
           {/* KPI Cards */}
@@ -140,9 +144,67 @@ const DoctorDashboard = () => {
             />
           </div>
 
+          {/* Clinical Workflow Options */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Doctor Workflow</h3>
+                <p className="text-sm text-slate-500">Structured actions for patient visits</p>
+              </div>
+              <button
+                onClick={() => openWorkflow('diagnosis')}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition"
+              >
+                New Visit
+              </button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <button
+                onClick={() => openWorkflow('diagnosis')}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-blue-300 hover:bg-blue-50 transition"
+              >
+                <FaStethoscope className="text-blue-600 text-xl" />
+                <div className="mt-2 font-semibold text-slate-900">Add Diagnosis</div>
+                <div className="text-xs text-slate-500">ICD-10 + severity</div>
+              </button>
+              <button
+                onClick={() => openWorkflow('prescription')}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-green-300 hover:bg-green-50 transition"
+              >
+                <FaPrescriptionBottleAlt className="text-green-600 text-xl" />
+                <div className="mt-2 font-semibold text-slate-900">Write Prescription</div>
+                <div className="text-xs text-slate-500">Dosage + frequency</div>
+              </button>
+              <button
+                onClick={() => openWorkflow('lab')}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-amber-300 hover:bg-amber-50 transition"
+              >
+                <FaFileMedical className="text-amber-600 text-xl" />
+                <div className="mt-2 font-semibold text-slate-900">Order Lab Tests</div>
+                <div className="text-xs text-slate-500">Checklist + priority</div>
+              </button>
+              <button
+                onClick={() => openWorkflow('notes')}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-purple-300 hover:bg-purple-50 transition"
+              >
+                <FaClipboardList className="text-purple-600 text-xl" />
+                <div className="mt-2 font-semibold text-slate-900">Add Doctor Notes</div>
+                <div className="text-xs text-slate-500">SOAP format</div>
+              </button>
+              <button
+                onClick={() => openWorkflow('files')}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-slate-400 hover:bg-slate-100 transition"
+              >
+                <FaUpload className="text-slate-700 text-xl" />
+                <div className="mt-2 font-semibold text-slate-900">Upload Files</div>
+                <div className="text-xs text-slate-500">X-ray, scans</div>
+              </button>
+            </div>
+          </div>
+
           {/* Analytics Section */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Weekly Consultations */}
+            {/* Weekly Consultations - Bar Chart */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900">Weekly Consultations</h3>
@@ -150,30 +212,80 @@ const DoctorDashboard = () => {
                   Last 7 days
                 </div>
               </div>
-              <BarChart
-                data={weeklyData}
-                height={280}
-                color="rgb(59, 130, 246)"
-              />
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={weeklyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="day" stroke="#64748b" />
+                  <YAxis stroke="#64748b" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      color: '#1e293b',
+                    }}
+                    formatter={(value) => [value, 'Consultations']}
+                  />
+                  <Bar dataKey="value" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
 
-            {/* Appointment Status Distribution */}
+            {/* Appointment Status - Pie Chart */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-slate-900">Appointment Status</h3>
                 <p className="text-sm text-slate-500">Distribution breakdown</p>
               </div>
-              <div className="flex items-center justify-center py-4">
-                <DonutChart
-                  data={statusDistribution}
-                  size={220}
-                  strokeWidth={35}
-                />
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={80}
+                    outerRadius={120}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    <Cell fill="#10b981" />
+                    <Cell fill="#f59e0b" />
+                    <Cell fill="#ef4444" />
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      color: '#1e293b',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm text-slate-600">
+                    Completed <strong>{statusDistribution[0]?.value || 0}%</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-amber-500"></div>
+                  <span className="text-sm text-slate-600">
+                    Pending <strong>{statusDistribution[1]?.value || 0}%</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                  <span className="text-sm text-slate-600">
+                    Cancelled <strong>{statusDistribution[2]?.value || 0}%</strong>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Monthly Trends */}
+          {/* Monthly Trends - Line Chart */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -182,7 +294,7 @@ const DoctorDashboard = () => {
               </div>
               <div className="flex gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                  <div className="h-3 w-3 rounded-full bg-teal-500"></div>
                   <span className="text-slate-600">Completed</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -191,11 +303,38 @@ const DoctorDashboard = () => {
                 </div>
               </div>
             </div>
-            <LineChart
-              data={monthlyTrends}
-              height={280}
-              smooth={true}
-            />
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={monthlyTrends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="month" stroke="#64748b" />
+                <YAxis stroke="#64748b" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    color: '#1e293b',
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="completed"
+                  stroke="#06b6d4"
+                  dot={{ fill: '#06b6d4', r: 4 }}
+                  strokeWidth={2}
+                  name="Completed"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cancelled"
+                  stroke="#f87171"
+                  dot={{ fill: '#f87171', r: 4 }}
+                  strokeWidth={2}
+                  name="Cancelled"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
           {/* Today's Schedule & Quick Actions */}
@@ -287,7 +426,10 @@ const DoctorDashboard = () => {
                   </div>
                 </button>
 
-                <button className="flex w-full items-center gap-3 rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 p-4 text-left text-white shadow-md transition hover:from-teal-700 hover:to-teal-800">
+                <button
+                  onClick={() => openWorkflow('diagnosis')}
+                  className="flex w-full items-center gap-3 rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 p-4 text-left text-white shadow-md transition hover:from-teal-700 hover:to-teal-800"
+                >
                   <FaStethoscope className="text-xl" />
                   <div>
                     <div className="font-semibold">Start Consultation</div>
@@ -315,6 +457,7 @@ const DoctorDashboard = () => {
           </div>
         </div>
       )}
+
     </DashboardLayout>
   );
 };

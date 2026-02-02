@@ -206,3 +206,38 @@ export const deletePatient = async (req, res) => {
         });
     }
 };
+
+/**
+ * Get patient medical history
+ */
+export const getPatientHistory = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Import MedicalRecord model
+        const { default: MedicalRecord } = await import('../models/MedicalRecord.js');
+
+        // Get patient's medical records
+        const medicalRecords = await MedicalRecord.find({ patient: id })
+            .populate({
+                path: 'doctor',
+                populate: { path: 'user', select: 'firstName lastName' }
+            })
+            .sort({ createdAt: -1 })
+            .limit(20);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                medicalRecords,
+                total: medicalRecords.length,
+            },
+        });
+    } catch (error) {
+        console.error('Get patient history error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching patient history',
+        });
+    }
+};

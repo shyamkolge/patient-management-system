@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.js';
-import { FaTachometerAlt, FaUserInjured, FaUserMd, FaCalendarCheck, FaUsersCog, FaFileMedical, FaPrescriptionBottleAlt } from 'react-icons/fa';
+import { FaTachometerAlt, FaUserInjured, FaUserMd, FaCalendarCheck, FaUsersCog, FaFileMedical, FaPrescriptionBottleAlt, FaStethoscope } from 'react-icons/fa';
 
 const baseLink =
   'flex items-center gap-4 rounded-xl px-4 py-2.5 text-sm font-medium transition';
@@ -19,6 +19,7 @@ const navConfig = {
     { label: 'Dashboard', to: '/doctor', icon: <FaTachometerAlt className="text-primary" /> },
     { label: 'Appointments', to: '/doctor/appointments', icon: <FaCalendarCheck className="text-pink-500" /> },
     { label: 'Schedule', to: '/doctor/schedule', icon: <FaCalendarCheck className="text-teal-500" /> },
+    { label: 'Consultation', to: '/doctor/consultation', icon: <FaStethoscope className="text-blue-500" /> },
     { label: 'Patients', to: '/doctor/patients', icon: <FaUserInjured className="text-blue-500" /> },
     { label: 'Prescriptions', to: '/doctor/prescriptions', icon: <FaPrescriptionBottleAlt className="text-green-500" /> },
     { label: 'Medical Records', to: '/doctor/records', icon: <FaFileMedical className="text-purple-500" /> },

@@ -35,6 +35,7 @@ import {
   DoctorPatients,
   DoctorPrescriptions,
   DoctorMedicalRecords,
+  DoctorConsultationWorkflow,
   AppointmentDetailsPage,
 } from "./pages/doctor/index.js";
 
@@ -45,6 +46,7 @@ import {
   PatientRecords,
   LabReportsPage,
   PatientPrescriptions,
+  PatientConsultationResultsPage,
 } from "./pages/patient/index.js";
 
 import Profile from "./pages/common/Profile.jsx";
@@ -162,6 +164,14 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/doctor/consultation"
+        element={
+          <ProtectedRoute roles={["doctor"]}>
+            <DoctorConsultationWorkflow />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/patient"
@@ -208,6 +218,14 @@ const router = createBrowserRouter(
         element={
           <ProtectedRoute roles={["patient"]}>
             <PatientPrescriptions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/patient/consultation/:consultationId"
+        element={
+          <ProtectedRoute roles={["patient"]}>
+            <PatientConsultationResultsPage />
           </ProtectedRoute>
         }
       />

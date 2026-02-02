@@ -150,4 +150,14 @@ export const doctorApi = {
     });
     return response.data?.data || response.data;
   },
+
+  // Send consultation completion notification
+  sendConsultationNotification: async (patientId, prescriptionId, consultationSummary) => {
+    const response = await api.post('/prescriptions/send-notification/consultation', {
+      patientId,
+      prescriptionId,
+      consultationSummary
+    });
+    return response.data;
+  },
 };

@@ -122,13 +122,33 @@ const AppointmentDetailsPage = () => {
   const handleStartConsultation = async () => {
     try {
       setActionLoading('consultation');
-      // TODO: Implement video consultation initiation
-      toast.info('Connecting to consultation...');
-      // Here you would typically initiate a video call or redirect to consultation page
+      console.log('Appointment data:', appointment);
+      
+      const patientId = appointment?.patient?._id || appointment?.patientId || appointment?.patient?.id;
+      
+      console.log('Extracted patientId:', patientId);
+      
+      if (!patientId) {
+        console.error('Patient ID not found in appointment:', appointment);
+        toast.error('Patient information not found');
+        setActionLoading(null);
+        return;
+      }
+
+      console.log('Navigating to consultation with patientId:', patientId, 'appointmentId:', appointmentId);
+
+      // Navigate to consultation workflow with patient pre-selected
+      navigate('/doctor/consultation', {
+        state: {
+          patientId,
+          appointmentId,
+          tab: 'diagnosis',
+        },
+      });
+      toast.success('Starting consultation...');
     } catch (error) {
       console.error('Error starting consultation:', error);
       toast.error('Failed to start consultation');
-    } finally {
       setActionLoading(null);
     }
   };
@@ -142,6 +162,13 @@ const AppointmentDetailsPage = () => {
     const last = user.lastName?.charAt(0) || '';
     return (first + last).toUpperCase() || 'P';
   };
+
+  useEffect(() => {
+    if (appointment) {
+      console.log('Appointment loaded:', appointment);
+      console.log('Appointment status:', appointment?.status);
+    }
+  }, [appointment]);
 
   return (
     <DashboardLayout title="Appointment Details" subtitle="Review appointment information">
@@ -279,8 +306,8 @@ const AppointmentDetailsPage = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-slate-500 font-medium">STATUS</p>
-                        <Badge tone={statusColors[appointment.status]} className="capitalize text-xs px-2 py-1 inline-block mt-1">
-                          {appointment.status}
+                        <Badge tone={statusColors[appointment?.status]} className="capitalize text-xs px-2 py-1 inline-block mt-1">
+                          {appointment?.status}
                         </Badge>
                       </div>
                     </div>
@@ -305,7 +332,7 @@ const AppointmentDetailsPage = () => {
                   )}
 
                   {/* Cancellation Reason */}
-                  {appointment.status === 'cancelled' && appointment.cancelReason && (
+                  {appointment?.status === 'cancelled' && appointment?.cancelReason && (
                     <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
                       <p className="font-semibold text-red-700 mb-1">Cancellation Reason</p>
                       <p className="text-red-600">{appointment.cancelReason}</p>
@@ -314,7 +341,7 @@ const AppointmentDetailsPage = () => {
                 </div>
 
                 {/* Cancel Form Modal */}
-                {showCancelForm && ['scheduled', 'pending', 'confirmed'].includes(appointment.status) && (
+                {showCancelForm && ['scheduled', 'pending', 'confirmed'].includes(appointment?.status) && (
                   <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full animate-in fade-in zoom-in duration-300">
                       <div className="bg-red-50 border-b border-red-200 px-6 py-4 rounded-t-2xl">
@@ -404,7 +431,7 @@ const AppointmentDetailsPage = () => {
                   <h3 className="font-bold text-slate-900 text-lg">Actions</h3>
 
                   {/* Confirm Button */}
-                  {['pending', 'scheduled'].includes(appointment.status) && (
+                  {['pending', 'scheduled'].includes(appointment?.status) && (
                     <button
                       onClick={handleConfirm}
                       disabled={actionLoading === 'confirm'}
@@ -425,7 +452,7 @@ const AppointmentDetailsPage = () => {
                   )}
 
                   {/* Start Consultation Button */}
-                  {appointment.status === 'confirmed' && (
+                  {appointment?.status === 'confirmed' && (
                     <button
                       onClick={handleStartConsultation}
                       disabled={actionLoading === 'consultation'}
@@ -446,7 +473,7 @@ const AppointmentDetailsPage = () => {
                   )}
 
                   {/* Cancel Button */}
-                  {['pending', 'scheduled', 'confirmed'].includes(appointment.status) && (
+                  {['pending', 'scheduled', 'confirmed'].includes(appointment?.status) && (
                     <button
                       onClick={() => setShowCancelForm(!showCancelForm)}
                       disabled={actionLoading}

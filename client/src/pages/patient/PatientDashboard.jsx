@@ -8,6 +8,8 @@ import { formatDate, formatName } from '../../utils/format.js';
 import { Badge } from '../../components/common/Badge.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useSocketContext } from '../../context/SocketContext.jsx';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const statusTone = (status) => {
   switch (status) {
@@ -25,9 +27,11 @@ const statusTone = (status) => {
 
 const PatientDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeConsultation, setActiveConsultation] = useState(null);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -59,16 +63,37 @@ const PatientDashboard = () => {
   useEffect(() => {
     if (!socket) return;
 
+    // Consultation Started
+    socket.on('consultationStarted', (data) => {
+      setActiveConsultation(data);
+      toast.info('🔄 Your doctor has started the consultation', {
+        position: 'top-right',
+        autoClose: 5000,
+      });
+    });
+
+    // Consultation Ended
+    socket.on('consultationEnded', (data) => {
+      toast.success('✓ Consultation completed! View your results.', {
+        position: 'top-right',
+        autoClose: 5000,
+        onClick: () => navigate(`/patient/consultation/${data.consultationId}`),
+      });
+      setActiveConsultation(null);
+    });
+
+    // Prescription Created
+    socket.on('prescriptionCreated', (data) => {
+      toast.info('📄 New prescription available', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      setStats(prev => prev ? ({ ...prev, prescriptions: prev.prescriptions + 1 }) : prev);
+    });
+
     // Appointment Status Updates
     socket.on('appointment_updated', (updatedAppointment) => {
       setAppointments(prev => prev.map(ppt => ppt._id === updatedAppointment._id ? updatedAppointment : ppt));
-      // toast.info(`Appointment status updated to ${updatedAppointment.status}`);
-    });
-
-    // New Prescription
-    socket.on('prescription_created', () => {
-      setStats(prev => prev ? ({ ...prev, prescriptions: prev.prescriptions + 1 }) : prev);
-      // Toast handled by notification usually, but we can do extra here
     });
 
     // New Medical Record
@@ -77,11 +102,13 @@ const PatientDashboard = () => {
     });
 
     return () => {
+      socket.off('consultationStarted');
+      socket.off('consultationEnded');
+      socket.off('prescriptionCreated');
       socket.off('appointment_updated');
-      socket.off('prescription_created');
       socket.off('medical_record_updated');
     };
-  }, [socket]);
+  }, [socket, navigate]);
 
   return (
     <DashboardLayout title="Patient Dashboard" subtitle="Your visits and care plan overview">
@@ -89,6 +116,24 @@ const PatientDashboard = () => {
         <Spinner />
       ) : (
         <div className="space-y-6">
+          {/* Active Consultation Banner */}
+          {activeConsultation && (
+            <div className="animate-pulse rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 to-green-100 p-6 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-white">
+                  🩺
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-green-900">Consultation in Progress</h3>
+                  <p className="text-sm text-green-700">
+                    Your doctor is reviewing your case. You'll be notified when it's completed.
+                  </p>
+                </div>
+                <div className="text-2xl">🔄</div>
+              </div>
+            </div>
+          )}
+
           {/* Welcome Section */}
           <div className="flex items-center gap-6 rounded-2xl bg-white p-6 shadow-sm border border-slate-200">
             <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-full bg-slate-100 ring-4 ring-blue-50">

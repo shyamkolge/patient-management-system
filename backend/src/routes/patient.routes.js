@@ -5,6 +5,7 @@ import {
     createPatient,
     updatePatient,
     deletePatient,
+    getPatientHistory,
 } from '../controllers/patient.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { isAdmin, isAdminOrDoctor } from '../middleware/rbac.js';
@@ -17,6 +18,7 @@ router.use(authenticate);
 // Admin and Doctor can view patients
 router.get('/', isAdminOrDoctor, getAllPatients);
 router.get('/:id', isAdminOrDoctor, getPatientById);
+router.get('/:id/history', isAdminOrDoctor, getPatientHistory);
 
 // Only Admin can create, update, delete patients
 router.post('/', isAdmin, createPatient);

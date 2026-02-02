@@ -4,5 +4,6 @@ export { default as DoctorSchedule } from './DoctorSchedule.jsx';
 export { default as DoctorPatients } from './DoctorPatients.jsx';
 export { default as DoctorPrescriptions } from './DoctorPrescriptions.jsx';
 export { default as DoctorMedicalRecords } from './DoctorMedicalRecords.jsx';
+export { default as DoctorConsultationWorkflow } from './DoctorConsultationWorkflow.jsx';
 export { default as AppointmentDetail } from './AppointmentDetail.jsx';
 export { default as AppointmentDetailsPage } from './AppointmentDetailsPage.jsx';

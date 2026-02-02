@@ -5,6 +5,7 @@ import {
     getPatientPrescriptions,
     createPrescription,
     updatePrescription,
+    sendConsultationNotification,
 } from '../controllers/prescription.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { isDoctor, isAdminOrDoctor } from '../middleware/rbac.js';
@@ -22,5 +23,8 @@ router.get('/patient/:patientId', isAdminOrDoctor, getPatientPrescriptions);
 // Only doctors can create and update prescriptions
 router.post('/', isDoctor, validate(prescriptionSchema), createPrescription);
 router.put('/:id', isDoctor, updatePrescription);
+
+// Send consultation completion notification
+router.post('/send-notification/consultation', isDoctor, sendConsultationNotification);
 
 export default router;

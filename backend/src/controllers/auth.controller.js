@@ -309,3 +309,134 @@ export const getProfile = async (req, res) => {
         });
     }
 };
+
+/**
+ * Update current user profile
+ */
+export const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+            });
+        }
+
+        const parseMaybeJson = (value) => {
+            if (typeof value !== 'string') return value;
+            try {
+                return JSON.parse(value);
+            } catch {
+                return value;
+            }
+        };
+
+        // Update basic user fields
+        const { firstName, lastName, phone } = req.body;
+        if (firstName !== undefined) user.firstName = firstName;
+        if (lastName !== undefined) user.lastName = lastName;
+        if (phone !== undefined) user.phone = phone;
+
+        // Update profile image if provided
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            user.profileImage = result.secure_url;
+        }
+
+        await user.save();
+
+        // Update role-specific profile
+        let profileData = null;
+        if (user.role === 'patient') {
+            profileData = await Patient.findOne({ user: user._id });
+            if (!profileData) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Patient profile not found',
+                });
+            }
+
+            const dateOfBirth = req.body.dateOfBirth;
+            const gender = req.body.gender;
+            const bloodGroup = req.body.bloodGroup;
+            const address = parseMaybeJson(req.body.address);
+            const emergencyContact = parseMaybeJson(req.body.emergencyContact);
+            const allergies = parseMaybeJson(req.body.allergies);
+
+            if (dateOfBirth) profileData.dateOfBirth = dateOfBirth;
+            if (gender) profileData.gender = gender;
+            if (bloodGroup) profileData.bloodGroup = bloodGroup;
+            if (address && typeof address === 'object') profileData.address = address;
+            if (emergencyContact && typeof emergencyContact === 'object') profileData.emergencyContact = emergencyContact;
+
+            if (Array.isArray(allergies)) {
+                profileData.allergies = allergies;
+            } else if (typeof allergies === 'string') {
+                profileData.allergies = allergies
+                    .split(',')
+                    .map((item) => item.trim())
+                    .filter(Boolean);
+            }
+
+            if (user.profileImage) {
+                profileData.profileImage = user.profileImage;
+            }
+
+            await profileData.save();
+        } else if (user.role === 'doctor') {
+            profileData = await Doctor.findOne({ user: user._id });
+            if (!profileData) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Doctor profile not found',
+                });
+            }
+
+            const specialization = req.body.specialization;
+            const department = req.body.department;
+            const experience = req.body.experience;
+            const bio = req.body.bio;
+            const licenseNumber = req.body.licenseNumber;
+            const consultationFee = req.body.consultationFee;
+
+            if (specialization !== undefined) profileData.specialization = specialization;
+            if (department !== undefined) profileData.department = department;
+            if (experience !== undefined) profileData.experience = Number(experience) || 0;
+            if (bio !== undefined) profileData.bio = bio;
+            if (licenseNumber !== undefined) profileData.licenseNumber = licenseNumber;
+            if (consultationFee !== undefined) profileData.consultationFee = Number(consultationFee) || 0;
+
+            if (user.profileImage) {
+                profileData.profileImage = user.profileImage;
+            }
+
+            await profileData.save();
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: {
+                user: {
+                    id: user._id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    role: user.role,
+                    phone: user.phone,
+                    status: user.status,
+                    profileImage: user.profileImage,
+                },
+                profile: profileData,
+            },
+        });
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating profile',
+        });
+    }
+};

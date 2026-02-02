@@ -51,12 +51,22 @@ const DoctorPrescriptions = () => {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h3 className="font-semibold text-slate-900">
-                {formatName(prescription.patient)}
+                {prescription.patient?.user
+                  ? formatName(prescription.patient.user)
+                  : formatName(prescription.patient)}
               </h3>
               <Badge tone={prescription.status === 'active' ? 'success' : 'info'}>
                 {prescription.status || 'active'}
               </Badge>
             </div>
+            <p className="text-sm text-slate-600">
+              {prescription.patient?.user?.email || prescription.patient?.email || '—'}
+            </p>
+            {(prescription.patient?.user?.phone || prescription.patient?.phone) && (
+              <p className="text-sm text-slate-500">
+                {prescription.patient?.user?.phone || prescription.patient?.phone}
+              </p>
+            )}
             <p className="text-sm text-slate-600">
               Date: {formatDate(new Date(prescription.createdAt))}
             </p>
@@ -368,9 +378,18 @@ const DoctorPrescriptions = () => {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">
-                    {formatName(prescription.patient)}
+                    {prescription.patient?.user
+                      ? formatName(prescription.patient.user)
+                      : formatName(prescription.patient)}
                   </h3>
-                  <p className="text-slate-600">{prescription.patient?.email}</p>
+                  <p className="text-slate-600">
+                    {prescription.patient?.user?.email || prescription.patient?.email || '—'}
+                  </p>
+                  {(prescription.patient?.user?.phone || prescription.patient?.phone) && (
+                    <p className="text-slate-600">
+                      {prescription.patient?.user?.phone || prescription.patient?.phone}
+                    </p>
+                  )}
                 </div>
                 <Badge tone={prescription.status === 'active' ? 'success' : 'info'}>
                   {prescription.status || 'active'}

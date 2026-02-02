@@ -4,6 +4,7 @@ import PatientDashboard from "./PatientDashboard"
 import PatientPrescriptions from "./Prescriptions"
 import PatientRecords from "./Records"
 import LabReportsPage from "./LabReportsPage"
+import PatientConsultationResultsPage from "./ConsultationResultsPage"
 
 export {
     PatientAppointments,
@@ -11,5 +12,6 @@ export {
     PatientDashboard,
     PatientPrescriptions,
     PatientRecords,
-    LabReportsPage
+    LabReportsPage,
+    PatientConsultationResultsPage
 }
